@@ -1,7 +1,7 @@
 (ns mma.core
-  (:refer-clojure :exclude [read-line flush eval import replace chars])
-  (require [clojure.string :as str :refer [replace]])
-  (use me.raynes.conch.low-level
+  (:refer-clojure :exclude [read-line flush eval import])
+  (use mma.conversion
+       me.raynes.conch.low-level
        me.raynes.conch
        [clarity core syntax utils]))
 
@@ -12,18 +12,20 @@
 ;; Stream utilities
 ;; ----------------
 
-defn chars [stream]
-  ->> #(.read stream) repeatedly (take-while #(> % 0)) (map char)
+inner-namespace stream
 
-defn readline [stream]
-  ->> stream chars (drop-while #(#{\newline \return} %)) (take-while #(not (#{\newline \return} %))) (apply str)
+  defn chars-seq [stream]
+    ->> #(.read stream) repeatedly (take-while #(> % 0)) (map char)
 
-defn read-rest [stream]
-  ->> stream chars (take (.available stream)) (apply str)
+  defn readline [stream]
+    ->> stream chars-seq (drop-while #(#{\newline \return} %)) (take-while #(not (#{\newline \return} %))) (apply str)
+
+  defn read-rest [stream]
+    ->> stream chars-seq (take (.available stream)) (apply str)
 
 declare ^:dynamic *mma*
 
-defn print-rest! []
+defn ^:private print-rest! []
   println : read-rest : *mma* :out
 
 ;; ------------------
@@ -34,7 +36,7 @@ def ^:dynamic *mma* nil
 
 declare eval send-input!
 
-def init """
+def ^:private init """
 WordJoin[strs_] := StringJoin[Riffle[strs, " "]];
 PrintResult[expr_: Null] := Print["r_" <> EdnForm[expr]];
 
@@ -83,12 +85,12 @@ defn start! []
 
 defn send-input! [input]
   feed-from-string *mma* : str input \newline
-defn result? [s]
+defn ^:private result? [s]
   .startsWith s "r_"
-defn parse-result [s]
+defn ^:private parse-result [s]
   read-string : .substring s 2
 
-defn get-result! []
+defn ^:private get-result! []
   loop [s ""]
     if (result? s)
       parse-result s
@@ -105,53 +107,6 @@ defn eval
     queued (*mma* :queue)
       send-input! : str "PrintResult[" s "]"
       (get-result!)
-
-;; ----------------------
-;; Clojure -> Mathematica
-;; ----------------------
-
-declare ->expr ->list
-
-defprotocol Mathematica
-  ->mma [this]
-
-(extend-protocol Mathematica
-  Object
-    (->mma [this] (pr-str this))
-
-  nil
-    (->mma [this] "Null")
-
-  clojure.lang.IPersistentVector
-    (->mma [this] (apply ->list this))
-
-  clojure.lang.ISeq
-    (->mma [this]
-      (if (symbol? (first this))
-        (apply ->expr this)
-        (apply ->list this))))
-
-defmulti ->expr (fn [head & args] head)
-
-defmethod ->expr :default [head & args]
-  str head "[" (str/join "," (map ->mma args)) "]"
-
-defmethod ->expr 'do [_ & exprs]
-  str/join ";" : map ->mma exprs
-
-(defmacro defalias [sym sub]
- `(defmethod ->expr '~sym [_# & args#]
-    (apply ->expr '~sub args#)))
-
-defalias + Plus
-defalias - Subtract
-defalias * Times
-defalias / Divide
-defalias ** Power
-defalias . Dot
-
-defn ->list [& xs]
-  str "{" (str/join "," : map ->mma xs) "}"
 
 ;; --------------------
 ;; High-level interface
@@ -218,36 +173,14 @@ defn mma-fn
   [sym]
   λ math : ~sym ~@%s
 
-def ^:private mma-doc
-  "Mathematica function.
-  Arguments are parsed into
-  Mathematica expressions."
-
 (defmacro import
   "Import Mathematica functions.
   (import Prime)
   (Prime 1) => 2"
   [& syms]
  `(do ~@(map (fn [sym]
-              `(def ~(with-meta sym {:doc mma-doc}) (mma-fn '~sym)))
+              `(def ~(with-meta sym) (mma-fn '~sym)))
              syms)))
 
 )
 
-;; Testing
-
-;(start!)
-
-;(let [x [1 2 3]
-;      y [4 5 6]]
-;  ($math
-;    "~x.~y"))
-
-;(import Prime)
-;(time (Prime '(Range 100)))
-
-;(math
-;  (Table (** x 2) [x 1 10]))
-
-;(math
-;  (Integrate (** x 2) x))

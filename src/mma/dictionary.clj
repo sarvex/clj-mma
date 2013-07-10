@@ -1,4 +1,5 @@
 (ns mma.dictionary
+  (use mma.conversion)
   (require [mma.core :as m]
            [clojure.string :as str]))
 
@@ -10,6 +11,13 @@
 ;; m.c == m[c] == c /. m == c
 ;; Assoc[m, c -> 4, d -> 5] == Dictionary[a -> 1, b -> 2, c -> 4, d -> 5]
 ;; Dissoc[m, a, b] == Dictionary[]
+
+(extend-protocol Mathematica
+    clojure.lang.Keyword
+      (->mma [this] (name this))
+    clojure.lang.IPersistentMap
+      (->mma [this]
+        (str "Dictionary[" (str/join "," (map (fn [[key val]] (str (->mma key) "->" (->mma val))) this)) "]")))
 
 (defn enable-maps
   "Allows interop for hash maps with Mathematica.
@@ -40,11 +48,4 @@
     Keywordise[key_] := EdnForm[key];
     RuleStr[key_ -> val_] := Keywordise[key] <> " " <> EdnForm[val];
     EdnForm[Dictionary[rs___]] ^:= "{" <> WordJoin[RuleStr /@ {rs}] <> "}";
-  )
-
-  (extend-protocol m/Mathematica
-    clojure.lang.Keyword
-      (->mma [this] (name this))
-    clojure.lang.IPersistentMap
-      (->mma [this]
-        (str "Dictionary[" (str/join "," (map (fn [[key val]] (str (m/->mma key) "->" (m/->mma val))) this)) "]"))))
+  ))

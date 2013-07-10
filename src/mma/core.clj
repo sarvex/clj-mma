@@ -3,7 +3,7 @@
   (require [clojure.string :as str :refer [replace]])
   (use me.raynes.conch.low-level
        me.raynes.conch
-       [clarity core symbol utils]))
+       [clarity core syntax utils]))
 
 (use-clarity)
 (clarity
@@ -162,7 +162,7 @@ defn ->list [& xs]
   Supports unquoting (~ and ~@) to access
   local vars."
   [& exprs]
- `(-> (q (~'CompoundExpression ~@exprs)) ->mma eval))
+ `(-> (quote* (~'CompoundExpression ~@exprs)) ->mma eval))
 
 ;; Vars
 
@@ -186,7 +186,7 @@ defn create-var [s]
     MathematicaVar. sym *mma*
 
 (defmacro mvar [& exprs]
- `(-> (q (~'CompoundExpression ~@exprs)) ->mma create-var))
+ `(-> (quote* (~'CompoundExpression ~@exprs)) ->mma create-var))
 
 def ^:dynamic *return-vars* false
 

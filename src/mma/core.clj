@@ -47,7 +47,9 @@ EdnForm[x_ /; x == False] := "false";
 EdnForm[list_List] := "[" <> WordJoin[EdnForm /@ list] <> "]";
 EdnForm[Rational[n_, d_]] := ToString[n] <> "/" <> ToString[d];
 EdnForm[x_Real] := StringReplace[ToString[x, InputForm], "*^" -> "E"];
-EdnForm[h_[c___]] := "(" <> WordJoin[EdnForm /@ {h, c}] <> ")";
+EdnForm[h_[c___]] := 
+  "(" <> ToString[h] <> " " <> WordJoin[EdnForm /@ {c}] <> ")";
+EdnForm[x_Symbol] := ":" <> ToString[x];
 
 SetOptions["stdout",FormatType->OutputForm];
 """

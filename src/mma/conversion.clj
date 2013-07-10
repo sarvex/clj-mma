@@ -17,6 +17,9 @@ defprotocol Mathematica
 
   nil
     (->mma [this] "Null")
+    
+  clojure.lang.Keyword
+    (->mma [this] (name this))
 
   clojure.lang.PersistentVector
     (->mma [this] (apply make-list this))

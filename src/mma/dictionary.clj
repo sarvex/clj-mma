@@ -13,11 +13,9 @@
 ;; Dissoc[m, a, b] == Dictionary[]
 
 (extend-protocol Mathematica
-    clojure.lang.Keyword
-      (->mma [this] (name this))
-    clojure.lang.IPersistentMap
-      (->mma [this]
-        (str "Dictionary[" (str/join "," (map (fn [[key val]] (str (->mma key) "->" (->mma val))) this)) "]")))
+  clojure.lang.IPersistentMap
+    (->mma [this]
+      (str "Dictionary[" (str/join "," (map (fn [[key val]] (str (->mma key) "->" (->mma val))) this)) "]")))
 
 (defn enable-maps
   "Allows interop for hash maps with Mathematica.

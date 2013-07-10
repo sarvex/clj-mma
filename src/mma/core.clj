@@ -36,6 +36,7 @@ def ^:dynamic *mma* nil
 
 declare eval send-input!
 
+;; Copied from init.nb
 def ^:private init """
 WordJoin[strs_] := StringJoin[Riffle[strs, " "]];
 PrintResult[expr_: Null] := Print["r_" <> EdnForm[expr]];

@@ -42,7 +42,7 @@
 
     (* Edn form conversion *)
 
-    Keywordise[key_Symbol] := ":" <> EdnForm[key];
+    Keywordise[key_Symbol] := ":" <> ToString[key];
     Keywordise[key_] := EdnForm[key];
     RuleStr[key_ -> val_] := Keywordise[key] <> " " <> EdnForm[val];
     EdnForm[Dictionary[rs___]] ^:= "{" <> WordJoin[RuleStr /@ {rs}] <> "}";

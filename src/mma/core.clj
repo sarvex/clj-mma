@@ -13,6 +13,9 @@
 ;; Stream utilities
 ;; ----------------
 
+;; Needed only for the print-rest debugging fn
+declare ^:dynamic *mma*
+
 inner-namespace stream
 
   defn chars-seq [stream]
@@ -24,16 +27,14 @@ inner-namespace stream
   defn read-rest [stream]
     ->> stream chars-seq (take (.available stream)) (apply str)
 
-declare ^:dynamic *mma*
-
-defn ^:private print-rest! []
-  println : read-rest : *mma* :out
+  defn print-rest! []
+    -> mma.core/*mma* :out read-rest println
 
 ;; ------------------
 ;; Session management
 ;; ------------------
 
-def ^:dynamic *mma* nil
+defonce ^:dynamic *mma* nil
 
 declare eval send-input!
 
@@ -72,27 +73,28 @@ defn start! []
   (stop!)
   alter-var-root #'*mma* start
 
-(defmacro with-session* [& forms]
+defmacro with-session* [& forms]
  `(binding [*mma* (start)]
     (let [result# (do ~@forms)]
       (stop *mma*)
-      result#)))
+      result#))
 
-(defmacro with-session [& forms]
+defmacro with-session [& forms]
  `(if *mma*
     (do ~@forms)
-    (with-session* ~@forms)))
+    (with-session* ~@forms))
 
 ;; ---------------------
 ;; Evaluation of strings
 ;; ---------------------
 
 defn send-input! [input]
-  feed-from-string *mma* : str input \newline
+  feed-from-string *mma* (str input \newline)
+
 defn ^:private result? [s]
   .startsWith s "r_"
 defn ^:private parse-result [s]
-  read-string : .substring s 2
+  -> s (.substring 2) (read-string)
 
 defn ^:private get-result! []
   loop [s ""]
@@ -100,7 +102,7 @@ defn ^:private get-result! []
       parse-result s
       do
         when-not (empty? s) (println s)
-        recur (readline : *mma* :out)
+        recur (readline (*mma* :out))
 
 defn eval
   "Eval a string in Mathematica and return the
@@ -109,19 +111,18 @@ defn eval
   [s]
   with-session
     queued (*mma* :queue)
-      send-input! : str "PrintResult[" s "]"
+      send-input! (str "PrintResult[" s "]")
       (get-result!)
 
 ;; --------------------
 ;; High-level interface
 ;; --------------------
 
-(defmacro math*
-  "Evaluate expressions within Mathematica.
-  Supports unquoting (~ and ~@) to access
-  local vars."
+defmacro math*
+  "Like `math` but always returns a result,
+  as opposed to a MathematicaVar"
   [& exprs]
- `(-> (quote* (~'CompoundExpression ~@exprs)) ->mma eval))
+  `(-> (quote* (~'CompoundExpression ~@exprs)) ->mma eval)
 
 ;; Vars
 
@@ -141,7 +142,7 @@ defn eval
 
 defn create-var [s]
   let [sym (math* (Unique))]
-    eval : i-str "~sym = ~s;"
+    eval (i-str "~sym = ~s;")
     MathematicaVar. sym *mma*
 
 (defmacro mvar [& exprs]
@@ -150,23 +151,27 @@ defn create-var [s]
 def ^:dynamic *return-vars* false
 
 defn set-return-vars! [val]
-  alter-var-root #'*return-vars* : λ val
+  alter-var-root #'*return-vars* (λ val)
 
-(defmacro math [& exprs]
+defmacro math
+  "Evaluate expressions within Mathematica.
+  Supports unquoting (~ and ~@) to access
+  local vars."
+  [& exprs]
  `(if *return-vars*
     (mvar  ~@exprs)
-    (math* ~@exprs)))
+    (math* ~@exprs))
 
-(defmacro $math
+defmacro $math
   "Evaluate a mathematica string, with
   support for unquoting (~)."
   [& ss]
   `(-> (str ~@(map #(if-not (string? %) `(->mma ~%) %)
                    (symbol-extract (apply str ss))))
-       ((if *return-vars* create-var eval))))
+       ((if *return-vars* create-var eval)))
 
-(defsyntax $ [s]
- `($math ~s))
+defsyntax $ [s]
+  `($math ~s)
 
 defn use-$ [] (use-syntax $)
 
@@ -175,16 +180,16 @@ defn mma-fn
   Mathematica function given by `sym`.
   ((mma-fn 'Prime) 1) => 2"
   [sym]
-  λ math : ~sym ~@%s
+  λ math (~sym ~@%s)
 
-(defmacro import
+defmacro import
   "Import Mathematica functions.
   (import Prime)
   (Prime 1) => 2"
   [& syms]
- `(do ~@(map (fn [sym]
-              `(def ~(with-meta sym) (mma-fn '~sym)))
-             syms)))
+  `(do ~@(map (fn [sym]
+               `(def ~sym (mma-fn '~sym)))
+              syms))
 
 )
 

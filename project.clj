@@ -1,6 +1,6 @@
-(defproject ml "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+(defproject clj-mma "0.1.0"
+  :description "A Clojure interface to Mathematica"
+  :url "https://github.com/one-more-minute/clj-mma"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]

@@ -1,4 +1,4 @@
-(defproject clj-mma "0.1.0"
+(defproject clj-mma "0.2.0-SNAPSHOT"
   :description "A Clojure interface to Mathematica"
   :url "https://github.com/one-more-minute/clj-mma"
   :license {:name "Eclipse Public License"

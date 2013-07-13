@@ -5,6 +5,7 @@
        me.raynes.conch
        [clarity core syntax utils]))
 
+;; see https://github.com/one-more-minute/clarity
 (use-clarity)
 (clarity
 

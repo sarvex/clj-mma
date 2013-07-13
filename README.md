@@ -2,7 +2,7 @@
 
 is a Clojure library which lets you interface with Mathemactica.
 
-Current version is `[clj-mma 0.1.0]`
+Current version is `[clj-mma "0.1.0"]`
 
 ```clj
 (ns user

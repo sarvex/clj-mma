@@ -22,25 +22,25 @@ defprotocol Mathematica
     (->mma [this] (name this))
 
   clojure.lang.PersistentVector
-    (->mma [this] (apply make-list this))
+    (->mma [this] (make-list this))
 
   clojure.lang.ISeq
     (->mma [this]
       (if (symbol? (first this))
-        (apply ->expr this)
-        (apply make-list this))))
+        (->expr this)
+        (make-list this))))
 
-defmulti ->expr (fn [head & args] head)
+defmulti ->expr (fn [[head & args]] head)
 
-defmethod ->expr :default [head & args]
+defmethod ->expr :default [[head & args]]
   str head "[" (str/join "," (map ->mma args)) "]"
 
-defmethod ->expr 'do [_ & exprs]
+defmethod ->expr 'do [[_ & exprs]]
   str/join ";" : map ->mma exprs
 
-(defmacro defalias [sym sub]
- `(defmethod ->expr '~sym [_# & args#]
-    (apply ->expr '~sub args#)))
+defmacro defalias [sym sub]
+ `(defmethod ->expr '~sym [[_# & args#]]
+    (->expr (cons '~sub args#)))
 
 defalias + Plus
 defalias - Subtract
@@ -49,7 +49,7 @@ defalias / Divide
 defalias ** Power
 defalias . Dot
 
-defn make-list [& xs]
+defn make-list [xs]
   str "{" (str/join "," : map ->mma xs) "}"
 
 )

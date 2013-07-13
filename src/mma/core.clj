@@ -145,7 +145,7 @@ defmacro math*
     (->mma [this] (str (.symbol this))))
 
 defn create-var [s]
-  let [sym (math* (Unique))]
+  let [sym (-> (math* (Unique)) name symbol)]
     eval (i-str "~sym = ~s;")
     MathematicaVar. sym *mma*
 

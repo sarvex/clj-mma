@@ -57,8 +57,12 @@ EdnForm[x_Symbol] := ":" <> ToString[x];
 SetOptions["stdout",FormatType->OutputForm];
 """
 
+def ^:private mma-path """C:\Program Files\Wolfram Research\Mathematica\9.0\math.exe"""
+defn set-mma-path [path]
+  alter-var-root #'mma-path (λ path)
+
 defn start [& _]
-  binding [*mma* (-> (proc """C:\Program Files\Wolfram Research\Mathematica\9.0\math.exe""" "-noprompt")
+  binding [*mma* (-> (proc mma-path "-noprompt")
                      (assoc :queue (queue)))]
     send-input! init
     *mma*

@@ -1,13 +1,13 @@
 # clj-mma
 
-is a Clojure library which lets you interface with Mathemactica.
+is a Clojure library which lets you call Mathematica.
 
 Current version is `[clj-mma "0.1.0"]`
 
 ```clj
 (ns user
   (require [mma.core :as m :refer [math $math]]))
-  (m/import Prime)
+(m/import Prime)
 ```
 
 To start, you'll need to set the path to your Mathematica kernel executable. On Windows this looks like `C:\Program Files\Wolfram Research\Mathematica\9.0\math.exe`, which is the default value. If it's on your path, "math" should do the trick.
@@ -72,7 +72,7 @@ Up to now each function call started a new Mathematica session. This takes aroun
 (m/with-session (mapv Prime (range 1 10)))
 ```
 
-Alternatively, if you do need to speed up your repl calls, you can start a global session with `(m/start!)` - but please only use this from the repl.
+Alternatively, if you do need to speed up your repl calls, you can start a global session with `(m/start!)`.
 
 ## Mathematica Vars
 
@@ -156,7 +156,3 @@ Assoc[m, c -> 4, d -> 5] == Dictionary[a -> 1, b -> 2, c -> 4, d -> 5]
 
 Dissoc[m, a] == Dictionary[b->2]
 ```
-
-## Possible Issues
-
-clj-mma will currently wait indefinitely for Mathematica to return a result - so syntax errors, for example, will cause it to hang. I hope to fix this within a configurable timeout soon.
